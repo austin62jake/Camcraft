@@ -90,6 +90,9 @@ fn thread_on(mch: &str) -> World {
         infeed: 0.4,
         feed: 120.0,
         plunge_feed: 40.0,
+        // #686: the field #639 added after this suite landed; the bar
+        // and insert here describe an ordinary right-hand thread.
+        hand: camcraft_app::cl::ThreadHand::Right,
     };
     h.execute(&world, CreateOperation::new(&world, "TH1", "TD-1732-60", SrcRef::Entity("bar".into()), params).expect("create"));
     h.execute(&world, GenerateOperation::new(&world, "TH1").expect("generate"));
@@ -117,7 +120,10 @@ fn a_thread_passes_the_built_in_lathe() {
 #[test]
 fn a_real_over_travel_on_a_lathe_is_still_refused() {
     // The same lathe with an X stroke short of the thread's radius (3 mm).
-    let short = builtin_lathe().replacen("\"min\": 0.0, \"max\": 320.0", "\"min\": 0.0, \"max\": 2.0", 1);
+    // Only the X stroke's top is rewritten (its first `"max": 320.0`), so
+    // the fixture survives a change to the X minimum (#686: 53e4aebb moved
+    // it to -2.5 for facing past centre and this replace stopped matching).
+    let short = builtin_lathe().replacen("\"max\": 320.0", "\"max\": 2.0", 1);
     assert_ne!(short, builtin_lathe(), "fixture: the X band was rewritten");
     let world = thread_on(&short);
     let p = travel_problems(&world);
